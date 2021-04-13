@@ -15,6 +15,8 @@ import gym
 import gym_duckietown
 from gym_duckietown.envs import DuckietownEnv
 from gym_duckietown.wrappers import UndistortWrapper
+from random import randint
+import os, os.path
 
 # from experiments.utils import save_img
 
@@ -44,6 +46,14 @@ else:
 
 env.reset()
 env.render()
+
+stop_sign_pos = []
+stop_sign_pos.append([2.08, 4.05])
+stop_sign_pos.append([2.08, 2.96])
+stop_sign_pos.append([0.94, 4.05])
+
+def within_distance(x, y):
+    return (np.linalg.norm(np.array((x[0], x[1])) - np.array((y[0] * 0.6, y[1] * 0.6))) <= 0.3)
 
 @env.unwrapped.window.event
 def on_key_press(symbol, modifiers):
@@ -98,12 +108,30 @@ def update(dt):
 
     obs, reward, done, info = env.step(action)
     print('step_count = %s, reward=%.3f' % (env.unwrapped.step_count, reward))
+    for stop_sign in stop_sign_pos:
+        if within_distance([env.cur_pos[0], env.cur_pos[2]], stop_sign):
+            print("Stop sign nearby!", stop_sign[0] * 0.6, stop_sign[1] * 0.6)
+            break
+
+    print(env.cur_pos)
 
     if key_handler[key.RETURN]:
+        # Save image that is not near a stop sign
         from PIL import Image
         im = Image.fromarray(obs)
+        num_files = len(os.listdir('data/0'))
+        filename = 'screen' + str(num_files) + '.png'
+        # im.save('screen.png')
+        im.save('data/0/' + filename)
 
-        im.save('screen.png')
+    if key_handler[key.RSHIFT]:
+        # Save image that is near a stop sign
+        from PIL import Image
+        im = Image.fromarray(obs)
+        num_files = len(os.listdir('data/100'))
+        filename = 'screen' + str(num_files) + '.png'
+        # im.save('screen.png')
+        im.save('data/100/' + filename)
 
     if done:
         print('done!')
